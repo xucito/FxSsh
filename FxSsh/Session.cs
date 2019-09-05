@@ -20,7 +20,7 @@ namespace FxSsh
         private const byte LineFeed = 0x0a;
         internal const int MaximumSshPacketSize = LocalChannelDataPacketSize;
         internal const int InitialLocalWindowSize = LocalChannelDataPacketSize * 32;
-        internal const int LocalChannelDataPacketSize = 1024 * 32;
+        public const int LocalChannelDataPacketSize = 5024 * 32;
 
         private static readonly RandomNumberGenerator _rng = new RNGCryptoServiceProvider();
         private static readonly Dictionary<byte, Type> _messagesMetadata;

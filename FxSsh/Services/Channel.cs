@@ -79,7 +79,7 @@ namespace FxSsh.Services
                 msg.Data = buf;
                 _connectionService._session.SendMessage(msg);
 
-                ClientWindowSize -= packetSize;
+                //ClientWindowSize -= packetSize;
                 total -= packetSize;
                 offset += packetSize;
             } while (total > 0);
