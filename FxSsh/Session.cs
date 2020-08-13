@@ -20,7 +20,7 @@ namespace FxSsh
         private const byte LineFeed = 0x0a;
         internal const int MaximumSshPacketSize = LocalChannelDataPacketSize;
         internal const int InitialLocalWindowSize = LocalChannelDataPacketSize * 32;
-        public const int LocalChannelDataPacketSize = 5024 * 32;
+        internal const int LocalChannelDataPacketSize = 1024 * 32;
 
         private static readonly RandomNumberGenerator _rng = new RNGCryptoServiceProvider();
         private static readonly Dictionary<byte, Type> _messagesMetadata;
@@ -37,11 +37,10 @@ namespace FxSsh
 
         private readonly object _locker = new object();
         private readonly Socket _socket;
-        private readonly TimeSpan _timeout = TimeSpan.FromDays(1);
 #if DEBUG
         private readonly TimeSpan _timeout = TimeSpan.FromDays(1);
 #else
-        //private readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(300);
 #endif
         private readonly Dictionary<string, string> _hostKey;
 
@@ -132,7 +131,10 @@ namespace FxSsh
                 while (_socket != null && _socket.Connected)
                 {
                     var message = ReceiveMessage();
-                    HandleMessageCore(message);
+                    if (message is UnknownMessage unknownMessage)
+                        SendMessage(unknownMessage.MakeUnimplementedMessage());
+                    else
+                        HandleMessageCore(message);
                 }
             }
             finally
@@ -144,15 +146,7 @@ namespace FxSsh
             }
         }
 
-        public void Disconnect()
-        {
-            Disconnect(DisconnectReason.ByApplication, "Connection terminated by the server.");
-
-            if (Disconnected != null)
-                Disconnected(this, EventArgs.Empty);
-        }
-
-        public void Disconnect(DisconnectReason reason, string description)
+        public void Disconnect(DisconnectReason reason = DisconnectReason.ByApplication, string description = "Connection terminated by the server.")
         {
             if (reason == DisconnectReason.ByApplication)
             {
@@ -344,7 +338,7 @@ namespace FxSsh
             var implemented = _messagesMetadata.ContainsKey(typeNumber);
             var message = implemented
                 ? (Message)Activator.CreateInstance(_messagesMetadata[typeNumber])
-                : new UnimplementedMessage { SequenceNumber = _inboundPacketSequence, UnimplementedMessageType = typeNumber };
+                : new UnknownMessage { SequenceNumber = _inboundPacketSequence, UnknownMessageType = typeNumber };
 
             if (implemented)
                 message.Load(data);
@@ -455,7 +449,6 @@ namespace FxSsh
                 {
                     SendMessageInternal(message);
                 }
-
             }
         }
 
@@ -601,7 +594,7 @@ namespace FxSsh
 
         private void HandleMessage(UnimplementedMessage message)
         {
-            SendMessage(message);
+            // Nothing to do here
         }
 
         private void HandleMessage(ServiceRequestMessage message)

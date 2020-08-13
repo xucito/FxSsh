@@ -65,7 +65,7 @@ namespace FxSsh.Services
             byte[] buf = null;
             do
             {
-                var packetSize = Math.Min(Math.Min(ClientWindowSize, ClientMaxPacketSize), total);
+                uint packetSize = Math.Min(Math.Min(ClientWindowSize, ClientMaxPacketSize), total);
                 if (packetSize == 0)
                 {
                     _sendingWindowWaitHandle.WaitOne();
@@ -79,7 +79,7 @@ namespace FxSsh.Services
                 msg.Data = buf;
                 _connectionService._session.SendMessage(msg);
 
-                //ClientWindowSize -= packetSize;
+                ClientWindowSize -= packetSize;
                 total -= packetSize;
                 offset += packetSize;
             } while (total > 0);
@@ -95,7 +95,7 @@ namespace FxSsh.Services
             _connectionService._session.SendMessage(msg);
         }
 
-        public void SendClose(uint? exitCode = null)
+        public void SendClose(uint? exitCode = null, bool forceClose = true)
         {
             if (ServerClosed)
                 return;
@@ -105,7 +105,10 @@ namespace FxSsh.Services
                 _connectionService._session.SendMessage(new ExitStatusMessage { RecipientChannel = ClientChannelId, ExitStatus = exitCode.Value });
             _connectionService._session.SendMessage(new ChannelCloseMessage { RecipientChannel = ClientChannelId });
 
-            CheckBothClosed();
+            if (forceClose)
+            {
+                CheckBothClosed();
+            }
         }
 
         internal void OnData(byte[] data)
