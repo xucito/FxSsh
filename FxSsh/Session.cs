@@ -37,10 +37,11 @@ namespace FxSsh
 
         private readonly object _locker = new object();
         private readonly Socket _socket;
+        private readonly TimeSpan _timeout = TimeSpan.FromDays(1);
 #if DEBUG
         private readonly TimeSpan _timeout = TimeSpan.FromDays(1);
 #else
-        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
+        //private readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
 #endif
         private readonly Dictionary<string, string> _hostKey;
 
@@ -454,6 +455,7 @@ namespace FxSsh
                 {
                     SendMessageInternal(message);
                 }
+
             }
         }
 
